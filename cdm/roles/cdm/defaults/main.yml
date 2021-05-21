@@ -1,0 +1,24 @@
+---
+
+# Minio server data directories
+minio_server_datadirs:
+  - /var/lib/minio
+cmd_make_datadirs: true
+minio_server_make_datadirs: true
+
+# Minio server cluster node list.
+#minio_server_cluster_nodes: [ ]
+
+# Switches to enable/disable the Minio server and/or Minio client installation.
+#minio_install_server: true
+#minio_install_client: true
+install_cdm: false
+init_cdm: false
+
+cdm_server_dir: /CDMServer
+
+cdm_install_db: yes
+
+cdm_cluster_id: 111
+
+cdm_db_id: 222

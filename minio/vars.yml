@@ -1,0 +1,9 @@
+minio_server_datadirs:     
+  - '/minio-data'                   
+minio_server_cluster_nodes:
+  - 'http://192.168.2.30//minio-data'     
+  - 'http://192.168.2.31//minio-data'     
+  - 'http://192.168.2.32//minio-data'     
+  - 'http://192.168.2.33//minio-data'     
+minio_access_key: "1234567890"     
+minio_secret_key: "1234567890"     

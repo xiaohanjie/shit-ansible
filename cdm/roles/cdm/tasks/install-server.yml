@@ -1,0 +1,158 @@
+---
+
+- name: install base packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - e2fsprogs
+    - lvm2
+
+- name: create new primary
+  parted:
+    device: "{{ item.device }}"
+    number: "{{ item.number }}"
+    state: present
+  loop:
+    - {device: "/dev/vdb", number: "1"}
+    - {device: "/dev/vdc", number: "2"}
+    - {device: "/dev/vdd", number: "3"}
+
+- name: create volume group
+  lvg:
+    vg: "{{ item.vgname }}" 
+    pvs: "{{ item.pdevice }}"
+  loop:
+    - {vgname: "vg01", pdevice: "/dev/vdb1"}
+    - {vgname: "vg02", pdevice: "/dev/vdc1"}
+    - {vgname: "vg03", pdevice: "/dev/vdd1"}
+
+- name: create a local volume
+  lvol:
+    vg: "{{ item.vgname }}"
+    lv: lv01
+    size: 100%VG
+    resizefs: true
+    force: yes
+    state: present
+  loop:
+    - {vgname: "vg01"}
+    - {vgname: "vg02"}
+    - {vgname: "vg03"}
+
+
+- name: create xfs filesystem
+  filesystem:
+    fstype: xfs
+    dev: "{{ item.lvmpath }}"
+  loop:
+    - {lvmpath: "/dev/vg01/lv01"}
+    - {lvmpath: "/dev/vg02/lv01"}
+    - {lvmpath: "/dev/vg03/lv01"}
+
+- name: mount lvs
+  mount:
+    path: "{{ item.destpath }}"
+    src: "{{ item.srcpath }}"
+    fstype: xfs
+    opts: noatime
+    state: mounted
+  loop:
+    - {srcpath: "/dev/vg01/lv01", destpath: "/vol1"}
+    - {srcpath: "/dev/vg02/lv01", destpath: "/vol2"}
+    - {srcpath: "/dev/vg03/lv01", destpath: "/vol3"}
+
+- name: start firewalld service
+  service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: stop NetworkManger service
+  service:
+    name: NetworkManager
+    state: stopped
+    enabled: false
+
+- name: Compose the cdm download url
+  set_fact:
+    #_cdm_server_download_url: "ftp://ftp-ab.hq.aishu.cn/FTP/ci-jobs/AB7.0/package/AnyBackupServer/Linux_el7_x64/Linux_el7_x64-latest.tar.gz"
+    _cdm_server_download_url: "http://10.2.238.115:8080/cdm/Linux_el7_x64-latest.tar.gz"
+
+#- name: Get CDM server checksum
+#  set_fact:
+#    _cdm_server_checksum: "{{ lookup('url', _cdm_server_download_url + '.sha256sum').split(' ')[0] }}"
+
+- name: cdm install dir
+  set_fact:
+    _cdm_install_dir: "/CDMServer"
+
+- name: Create the cmd directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+ #  checksum: "sha256:{{ _cdm_server_checksum }}"
+  when: cmd_make_datadirs
+  with_items: "{{ _cdm_install_dir }}"
+
+- name: Download the cdm package
+  get_url:
+    url: "{{ _cdm_server_download_url }}"
+    dest: "{{ _cdm_install_dir }}"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  register: _download_server
+  until: _download_server is succeeded
+  retries: 5
+  delay: 2
+
+- name: unarchive the cdm package
+  unarchive:
+    src: "{{ _cdm_install_dir }}/Linux_el7_x64-latest.tar.gz"
+    remote_src: yes
+    dest: "{{ _cdm_install_dir }}"
+
+
+#- name: install cdm master node
+#  shell: |
+#    cd "{{ _cdm_install_dir }}"/AnyBackupServer
+#    ./install.sh --product=CDM --server-type=MASTER --self-ip=192.168.2.31 --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_vip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
+#  register: _install_cdm
+
+#- name: display install output
+#  debug: var=_install_cdm.stdout_lines
+
+- name: Create the cdm master server init_cmd.sh config
+  vars:
+    server_type: MASTER
+  template:
+    src: init_cdm.j2
+    dest: "{{ _cdm_install_dir  }}/init_cdm.sh"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  when: inventory_hostname in groups['master']
+
+- name: Create the cdm slave server init_cmd.sh config
+  vars:
+    server_type: SLAVE
+  template:
+    src: init_cdm.j2
+    dest: "{{ _cdm_install_dir  }}/init_cdm.sh"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  when: inventory_hostname in groups['slave']
+
+#- name: install cdm all node
+#  shell: |
+#    cd "{{ _cdm_install_dir }}"
+#    ./init_cdm.sh 
+#  register: _install_cdm
+
+#- name: display install output
+#  debug: var=_install_cdm.stdout_lines

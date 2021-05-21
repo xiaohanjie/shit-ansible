@@ -1,0 +1,63 @@
+---
+
+- name: install base packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - e2fsprogs
+    - lvm2
+    - wget
+
+- name: Compose the client cdm download url
+  set_fact:
+    _cdm_client_download_url: "{{ cdm_client_repo }}"
+
+- name: cdm install dir
+  set_fact:
+    _cdm_install_dir: "{{ cdm_dir }}"
+
+- name: Create the cmd directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when: cmd_make_datadirs
+  with_items: "{{ _cdm_install_dir }}"
+
+- name: Download the client cdm package
+  get_url:
+    url: "{{ _cdm_client_download_url }}"
+    dest: "{{ _cdm_install_dir }}/Client.tar.gz"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  register: _download_server
+  until: _download_server is succeeded
+  retries: 5
+  delay: 2
+
+- name: unarchive the cdm package
+  unarchive:
+    src: "{{ _cdm_install_dir }}/Client.tar.gz"
+    remote_src: yes
+    dest: "{{ _cdm_install_dir }}"
+
+- name: Create the cdm server init_cmd.sh config
+  template:
+    src: init_cdm.j2
+    dest: "{{ _cdm_install_dir }}/init_cdm.sh"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: install cdm all node
+  shell: |
+    cd "{{ _cdm_install_dir }}"
+    ./init_cdm.sh init_client 
+  register: _install_cdm
+
+- name: display install output
+  debug: var=_install_cdm.stdout_lines

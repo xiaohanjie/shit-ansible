@@ -1,0 +1,111 @@
+source /root/.bashrc
+
+ERROR(){
+    /bin/echo -e "[ERROR] $@"
+}
+
+WARNING(){
+    /bin/echo -e "[WARNING] $@"
+}
+
+INFO(){
+    /bin/echo -e "[INFO] $@"
+}
+
+exists() {
+    type $1 > /dev/null 2>&1
+}
+
+function init_cdm
+{
+{% if cdm_branch=='AB' and groups['server']|length == 1 %}
+cd AnyBackupServer
+./install.sh --product=CDM --server-type=NONE --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
+{% elif cdm_branch=='AB' and ansible_play_hosts.index(inventory_hostname) == 0 %}
+cd AnyBackupServer
+./install.sh --product=CDM --server-type=MASTER --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
+{% elif cdm_branch=='AB' and ansible_play_hosts.index(inventory_hostname) > 0 %}
+cd AnyBackupServer
+./install.sh --product=CDM --server-type=SLAVE --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
+{% endif %}
+{% if cdm_branch=='HW' and groups['server']|length == 1 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" CDMServer/etc/Common/ams.ini
+cd CDMServer
+./install.sh --node-type=MASTER --cs-node=single --cluster-key={{ cdm_cluster_id }} --cluster-ip={{ cdm_cluster_ip }} --need-db=y --db-key={{ cdm_db_id }} --db-ip={{ cdm_db_vip }} --local-ip={{ inventory_hostname }}
+{% elif cdm_branch=='HW' and ansible_play_hosts.index(inventory_hostname) == 0 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" CDMServer/etc/Common/ams.ini
+cd CDMServer
+./install.sh --node-type=MASTER --cs-node=cluster --cluster-key={{ cdm_cluster_id }} --cluster-ip={{ cdm_cluster_ip }} --need-db=y --db-key={{ cdm_db_id }} --db-ip={{ cdm_db_vip }} --local-ip={{ inventory_hostname }}
+{% elif cdm_branch=='HW' and ansible_play_hosts.index(inventory_hostname) > 0 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" CDMServer/etc/Common/ams.ini
+cd CDMServer
+./install.sh --node-type=SLAVE --cs-node=cluster --cluster-key={{ cdm_cluster_id }} --cluster-ip={{ cdm_cluster_ip }} --need-db=y --db-key={{ cdm_db_id }} --db-ip={{ cdm_db_vip }} --local-ip={{ inventory_hostname }}
+{% endif %}
+}
+
+function init_client
+{
+{% if cdm_branch=='AB' %}
+cd CDMClient
+./install.sh {{ inventory_hostname }} {{ cdm_cluster_ip }}  Chinese volume_cdp force n
+{% endif %}
+{% if cdm_branch=='HW' %}
+cd CDMClient/HWClientService
+./install.sh {{ inventory_hostname }} {{ cdm_cluster_ip }}  Chinese volume_cdp force n
+{% endif %}
+}
+
+function uninstall_cdm
+{
+{% if cdm_branch=='AB' %}
+cd AnyBackupServer
+echo "I'm sure" | ./uninstall.sh
+{% elif cdm_branch=='HW' %}
+cd CDMServer
+echo "yes" | ./uninstall.sh
+{% endif %}
+}
+
+function uninstall_client
+{
+{% if cdm_branch=='AB' %}
+cd AnyBackupServer
+echo "I'm sure" | ./uninstall.sh
+{% elif cdm_branch=='HW' %}
+cd CDMClient/HWClientService
+echo "yes" | ./uninstall.sh
+{% endif %}
+}
+
+{% if cdm_service is defined %}
+function patch_cdm
+{
+{% if cdm_branch=='AB' %}
+patchname=`ls | grep {{ cdm_service }}`
+/bin/cp -fa CDMServer/{{ cdm_service }}Service CDMServer/{{ cdm_service }}Servicebak
+/bin/cp -rf $patchname/{{ cdm_service }}Service/*.debug  CDMServer/{{ cdm_service }}Service
+chown -R eab:eab CDMServer/AB{{ cdm_service }}Service/*
+/bin/cp -rf $patchname/{{ cdm_service }}Service/components/* CDMServer/{{ cdm_service }}Service/components
+rm -rf $patchname
+{% elif cdm_branch=='HW' %}
+patchname=`ls | grep {{ cdm_service }}`
+/bin/cp -fa CDMServer/HW{{ cdm_service }}Service CDMServer/HW{{ cdm_service }}Servicebak
+/bin/cp -rf $patchname/{{ cdm_service }}Service/*.debug  CDMServer/HW{{ cdm_service }}Service
+chown -R hwcdm:hwcdm CDMServer/HW{{ cdm_service }}Service/*
+/bin/cp -rf $patchname/{{ cdm_service }}Service/components/* CDMServer/HW{{ cdm_service }}Service/components
+rm -rf $patchname
+{% endif %}
+}
+{% endif %}
+
+$1 $2
+init_result=$?
+echo $ansible_result
+
+if [ "$init_result" == "0" ]; then
+   INFO "task cdm ansible is success "
+else
+   ERROR "task cdm ansible is failure"
+   exit 1
+fi
+

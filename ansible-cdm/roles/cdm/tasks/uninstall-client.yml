@@ -1,0 +1,9 @@
+- name: uninstall cdm all node
+  shell: |
+    cd "{{ cdm_dir }}"
+    ./init_cdm.sh uninstall_client
+  register: _uninstall_client
+  ignore_errors: yes
+
+- name: display uninstall output
+  debug: var=_uninstall_client.stdout_line

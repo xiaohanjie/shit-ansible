@@ -1,0 +1,76 @@
+- name: uninstall cdm all node
+  shell: |
+    cd "{{ cdm_dir }}"
+    ./init_cdm.sh uninstall_cdm
+  register: _uninstall_cdm
+  ignore_errors: yes
+
+- name: display install output
+  debug: var=_uninstall_cdm.stdout_lines
+
+- name: Remove cdm directory 
+  file:
+    path: "{{ cdm_dir }}"
+    state: absent
+  ignore_errors: yes
+
+- name: Remove the HW user
+  user:
+    name: hwcdm
+    uid: 2048
+    state: absent
+    remove: yes
+  when: cdm_branch == "HW"
+
+- name: Remove the HW group
+  group:
+    name: hwcdm
+    gid: 2048
+    state: absent
+  when: cdm_branch == "HW"
+
+- name: Remove the AB user
+  user:
+    name: eab
+    uid: 2048
+    state: absent
+    remove: yes
+  when: cdm_branch == "AB"
+
+- name: Remove the AB group
+  group:
+    name: eab
+    gid: 2048
+    state: absent
+  when: cdm_branch == "AB"
+
+- name: unmount lvs
+  mount:
+    path: "{{ item.destpath }}"
+    src: "{{ item.srcpath }}"
+    fstype: "{{ cdm_fstype }}"
+    opts: noatime
+    state: unmounted
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete local volume
+  lvol:
+    vg: "{{ item.vgname }}"
+    lv: lv01
+    force: yes
+    state: absent
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete volume group
+  lvg:
+    vg: "{{ item.vgname }}"
+    pvs: "{{ item.pdevice }}"
+    state: absent
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete primary
+  parted:
+    device: "{{ item.device }}"
+    number: "{{ item.number }}"
+    state: absent
+  loop: "{{ cdm_device }}"

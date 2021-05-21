@@ -1,0 +1,19 @@
+---
+
+- include: install-server.yml
+  when: install_cdm
+
+- include: install-client.yml
+  when: install_client
+
+- include: init-server.yml
+  when: init_cdm
+
+- include: uninstall-server.yml
+  when: uninstall_cdm
+
+- include: uninstall-client.yml
+  when: uninstall_client
+
+- include: patch-server.yml
+  when: patch_cdm

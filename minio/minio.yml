@@ -1,0 +1,17 @@
+- name: "Install Minio"
+  hosts: vms
+  vars_files:
+    - ./vars.yml
+  roles:
+    - minio
+#  vars:
+#    minio_server_datadirs: 
+#      - '/minio-data'
+#    minio_server_cluster_nodes:
+#      - 'http://192.168.2.24/minio-data'
+#      - 'http://192.168.2.25/minio-data'
+#      - 'http://192.168.2.26/minio-data'
+#      - 'http://192.168.2.27/minio-data'
+#    minio_access_key: "1234567890"
+#    minio_secret_key: "1234567890"
+    

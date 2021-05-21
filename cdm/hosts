@@ -1,0 +1,9 @@
+[vms]
+192.168.2.40  ansible_ssh_user=root ansible_ssh_pass=root123
+192.168.2.41  ansible_ssh_user=root ansible_ssh_pass=root123
+192.168.2.42  ansible_ssh_user=root ansible_ssh_pass=root123
+[master]
+192.168.2.40  ansible_ssh_user=root ansible_ssh_pass=root123
+[slave]
+192.168.2.41  ansible_ssh_user=root ansible_ssh_pass=root123
+192.168.2.42  ansible_ssh_user=root ansible_ssh_pass=root123

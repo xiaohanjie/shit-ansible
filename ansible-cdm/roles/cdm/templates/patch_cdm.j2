@@ -1,0 +1,48 @@
+source /root/.bashrc
+
+ERROR(){
+    /bin/echo -e "[ERROR] $@"
+}
+
+WARNING(){
+    /bin/echo -e "[WARNING] $@"
+}
+
+INFO(){
+    /bin/echo -e "[INFO] $@"
+}
+
+exists() {
+    type $1 > /dev/null 2>&1
+}
+
+function patch_cdm
+{
+{% if cdm_branch=='AB' %}
+patchname=`ls | grep {{ cdm_service }}`
+/bin/cp -fa AnyBackupServer/{{ cdm_service }}Service AnyBackupServer/{{ cdm_service }}Servicebak
+/bin/cp -rf $patchname/{{ cdm_service }}Service/*.debug  AnyBackupServer/{{ cdm_service }}Service
+chown -R eab:eab AnyBackupServer/{{ cdm_service }}Service/*
+/bin/cp -rf $patchname/{{ cdm_service }}Service/components/* AnyBackupServer/{{ cdm_service }}Service/components
+rm -rf $patchname
+{% elif cdm_branch=='HW' %}
+patchname=`ls | grep {{ cdm_service }}`
+/bin/cp -fa CDMServer/HW{{ cdm_service }}Service CDMServer/HW{{ cdm_service }}Servicebak
+/bin/cp -rf $patchname/{{ cdm_service }}Service/*.debug  CDMServer/HW{{ cdm_service }}Service
+chown -R hwcdm:hwcdm CDMServer/HW{{ cdm_service }}Service/*
+/bin/cp -rf $patchname/{{ cdm_service }}Service/components/* CDMServer/HW{{ cdm_service }}Service/components
+rm -rf $patchname
+{% endif %}
+}
+
+$1 $2
+init_result=$?
+echo $ansible_result
+
+if [ "$init_result" == "0" ]; then
+   INFO "task cdm ansible is success "
+else
+   ERROR "task cdm ansible is failure"
+   exit 1
+fi
+

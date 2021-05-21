@@ -1,0 +1,36 @@
+source /root/.bashrc
+
+ERROR(){
+    /bin/echo -e "\e[101m\e[97m[ERROR]\e[49m\e[39m $@"
+}
+
+WARNING(){
+    /bin/echo -e "\e[101m\e[97m[WARNING]\e[49m\e[39m $@"
+}
+
+INFO(){
+    /bin/echo -e "\e[104m\e[97m[INFO]\e[49m\e[39m $@"
+}
+
+exists() {
+    type $1 > /dev/null 2>&1
+}
+
+  
+function init_cdm
+{
+cd AnyBackupServer
+./install.sh --product=CDM --server-type={{ server_type }} --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_vip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
+}
+
+init_cdm
+init_result=$?
+#echo $ansible_result
+
+if [ "$init_result" == "0" ]; then
+   INFO "task cdm ansible is success "
+else
+   ERROR "task cdm ansible is failure"
+   exit 1
+fi
+

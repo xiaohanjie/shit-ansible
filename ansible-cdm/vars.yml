@@ -1,0 +1,36 @@
+#cdm_server_repo: "http://10.2.238.115:8080/cdm/ABCDM/Linux_el7_x64-latest.tar.gz"
+cdm_server_repo: "http://10.2.238.115:8080/cdm/Linux_el7_x64-latest.tar.gz"
+cdm_branch: AB
+cdm_cluster_ip: 192.168.2.45
+cdm_db_vip: 192.168.2.46
+
+#cdm_device:
+#    - {device: "/dev/vdb", number: "1"}
+#    - {device: "/dev/vdc", number: "1"}
+cdm_device:
+- device: /dev/vdb
+  number: '1'
+- device: /dev/vdc
+  number: '1'
+cdm_device:
+- device: /dev/vdb
+  number: '1'
+- device: /dev/vdc
+  number: '1'
+cdm_lvm_device:
+- srcpath: /dev/vg01/lv01
+  destpath: /vol1
+  vgname: vg01
+  pdevice: /dev/vdb1
+- srcpath: /dev/vg02/lv01
+  destpath: /vol2
+  vgname: vg02
+  pdevice: /dev/vdc1
+#cdm_lvm_device:
+#    - {srcpath: "/dev/vg01/lv01", destpath: "/vol1", vgname: "vg01", pdevice: "/dev/vdb1"}
+#    - {srcpath: "/dev/vg02/lv01", destpath: "/vol2", vgname: "vg02", pdevice: "/dev/vdc1"}
+cdm_fstype: ext4
+
+cdm_service: CDMStoreMgm
+#cdm_patch_repo: ftp://ftp-ab.aishu.cn/FTP/Apollo/APStorage/Release/NautilusService/1.0.1/Linux_el7_x64/Release/latest.tar.gz
+cdm_patch_repo: ftp://ftp-ab.aishu.cn/FTP/Apollo/APStorage/Main/CDMStoreMgmService/1.0/Linux_el7_x64/Release/latest.tar.gz 

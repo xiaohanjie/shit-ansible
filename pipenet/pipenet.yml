@@ -1,0 +1,10 @@
+- name: "set pipenet ip" 
+  hosts: vms
+#  user: root
+  gather_facts: no
+  vars_files:
+    - ./vars.yml
+  roles:
+    - role: pipenet
+
+      

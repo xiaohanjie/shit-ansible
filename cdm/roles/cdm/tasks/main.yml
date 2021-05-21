@@ -1,0 +1,8 @@
+---
+
+- include: install-server.yml
+  when: install_cdm
+
+- include: init-server.yml
+  when: init_cdm
+

@@ -1,0 +1,177 @@
+---
+
+- name: install base packages
+  tags: 
+    - lvm
+    - unlvm    
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - e2fsprogs
+    - lvm2
+    - wget
+    - gdb
+    - net-tools
+
+- name: unmount lvs
+  tags: unlvm
+  mount:
+    path: "{{ item.destpath }}"
+    state: unmounted
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete local volume
+  tags: unlvm
+  lvol:
+    vg: "{{ item.vgname }}"
+    lv: lv01
+    force: yes
+    state: absent
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete volume group
+  tags: unlvm
+  lvg:
+    vg: "{{ item.vgname }}"
+    pvs: "{{ item.pdevice }}"
+    state: absent
+  loop: "{{ cdm_lvm_device }}"
+
+- name: delete primary
+  tags: unlvm
+  parted:
+    device: "{{ item.device }}"
+    number: "{{ item.number }}"
+    state: absent
+  loop: "{{ cdm_device }}"
+  delay: 5
+
+- name: create new primary
+  tags: lvm
+  parted:
+    device: "{{ item.device }}"
+    number: "{{ item.number }}"
+    state: present
+  loop: "{{ cdm_device }}"
+  delay: 5
+
+- name: create volume group
+  tags: lvm
+  lvg:
+    vg: "{{ item.vgname }}" 
+    pvs: "{{ item.pdevice }}"
+    state: present
+  loop: "{{ cdm_lvm_device }}"
+  delay: 5
+
+- name: create a local volume
+  tags: lvm
+  lvol:
+    vg: "{{ item.vgname }}"
+    lv: lv01
+    size: 100%VG
+    resizefs: true
+    force: yes
+    state: present
+  loop: "{{ cdm_lvm_device }}"
+  delay: 5
+
+- name: format filesystem
+  tags: lvm
+  filesystem:
+    fstype: "{{ cdm_fstype }}"
+    dev: "{{ item.srcpath }}"
+  loop: "{{ cdm_lvm_device }}"
+#  ignore_errors: yes
+  retries: 5
+  delay: 2
+
+- name: mount lvs
+  tags: lvm
+  mount:
+    path: "{{ item.destpath }}"
+    src: "{{ item.srcpath }}"
+    fstype: "{{ cdm_fstype }}"
+    state: mounted
+  loop: "{{ cdm_lvm_device }}"
+
+- name: start firewalld service
+  service:
+    name: firewalld
+    state: started
+    enabled: true
+  ignore_errors: yes
+
+- name: stop NetworkManger service
+  service:
+    name: NetworkManager
+    state: stopped
+    enabled: false
+  ignore_errors: yes
+
+- name: restart Network service
+  service:
+    name: network
+    state: restarted
+
+- name: net configuration step 1
+  debug:
+    msg: we changed some files
+  notify: restart systemd-networkd
+
+- name: net configuration step 2
+  debug:
+    msg: do some more work, but restart net services only once
+  notify: restart systemd-networkd
+
+- name: set aishu dns
+  shell: echo "nameserver 192.168.4.113" > /etc/resolv.conf
+
+- name: Compose the cdm download url
+  set_fact:
+#    _cdm_server_download_url: "ftp://ftp-ab.hq.aishu.cn/FTP/ci-jobs/AB7.0/package/AnyBackupServer/Linux_el7_x64/Linux_el7_x64-latest.tar.gz"
+    _cdm_server_download_url: "{{ cdm_server_repo }}"
+#    _cdm_server_download_url: "http://10.2.238.115:8080/cdm/Linux_el7_x64-latest.tar.gz"
+
+- name: cdm install dir
+  set_fact:
+    _cdm_install_dir: "{{ cdm_dir }}"
+
+- name: Create the cmd directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when: cmd_make_datadirs
+  with_items: "{{ _cdm_install_dir }}"
+
+- name: Download the cdm package
+  get_url:
+    url: "{{ _cdm_server_download_url }}"
+    dest: "{{ _cdm_install_dir }}/Linux_el7_x64-latest.tar.gz"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  register: _download_server
+  until: _download_server is succeeded
+  retries: 5
+  delay: 2
+
+- name: unarchive the cdm package
+  unarchive:
+    src: "{{ _cdm_install_dir }}/Linux_el7_x64-latest.tar.gz"
+    remote_src: yes
+    dest: "{{ _cdm_install_dir }}"
+
+- name: Create the cdm server init_cmd.sh config
+  template:
+    src: init_cdm.j2
+    dest: "{{ _cdm_install_dir  }}/init_cdm.sh"
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+

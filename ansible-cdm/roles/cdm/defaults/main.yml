@@ -1,0 +1,19 @@
+---
+
+cmd_make_datadirs: true
+default_hostip: 10.2.238.117
+
+install_cdm: false
+init_cdm: false
+install_client: false
+uninstall_cdm: false
+uninstall_client: false
+patch_cdm: false
+
+cdm_dir: /CDMServer
+cdm_install_db: yes
+cdm_cluster_id: 111
+cdm_db_id: 222
+
+cdm_fstype: xfs
+cdm_server_repo: "ftp://ftp-ab.aishu.cn/FTP/ci-jobs/AB7.0StorageTest/package/AnyBackupServer/ABNormal/Linux_el7_x64/Linux_el7_x64-latest.tar.gz"

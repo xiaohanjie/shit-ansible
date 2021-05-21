@@ -1,0 +1,9 @@
+- name: install cdm all node
+  shell: |
+    cd "{{ _cdm_install_dir }}"
+    ./init_cdm.sh init_cdm
+ # ignore_errors: yes
+  register: _install_cdm
+
+- name: display install output
+  debug: var=_install_cdm.stdout_lines
