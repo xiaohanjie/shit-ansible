@@ -1,9 +1,6 @@
 ---
 
 - name: install base packages
-  tags: 
-    - lvm
-    - unlvm    
   yum:
     name: "{{ item }}"
     state: present

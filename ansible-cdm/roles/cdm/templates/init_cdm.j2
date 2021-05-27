@@ -19,12 +19,15 @@ exists() {
 function init_cdm
 {
 {% if cdm_branch=='AB' and groups['server']|length == 1 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" AnyBackupServer/etc/Common/ams.ini
 cd AnyBackupServer
 ./install.sh --product=CDM --server-type=NONE --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
 {% elif cdm_branch=='AB' and ansible_play_hosts.index(inventory_hostname) == 0 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" AnyBackupServer/etc/Common/ams.ini
 cd AnyBackupServer
 ./install.sh --product=CDM --server-type=MASTER --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
 {% elif cdm_branch=='AB' and ansible_play_hosts.index(inventory_hostname) > 0 %}
+sed -i "s/ips=/ips={{ default_hostip }}/g" AnyBackupServer/etc/Common/ams.ini
 cd AnyBackupServer
 ./install.sh --product=CDM --server-type=SLAVE --self-ip={{ inventory_hostname }} --cluster-id={{ cdm_cluster_id }} --cluster-vip={{ cdm_cluster_ip }} --install-db=yes --db-id={{ cdm_db_id }} --db-vip={{ cdm_db_vip }}  --ssl=no
 {% endif %}

@@ -1,9 +1,9 @@
 [vms]
-192.168.2.30  ansible_ssh_user=root ansible_ssh_pass="root123"
-192.168.2.31  ansible_ssh_user=root ansible_ssh_pass="root123"
-192.168.2.32  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.40  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.41  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.42  ansible_ssh_user=root ansible_ssh_pass="root123"
 
 [server]
-192.168.2.30  ansible_ssh_user=root ansible_ssh_pass="root123"
-#192.168.2.41  ansible_ssh_user=root ansible_ssh_pass="root123"
-#192.168.2.42  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.40  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.41  ansible_ssh_user=root ansible_ssh_pass="root123"
+192.168.2.42  ansible_ssh_user=root ansible_ssh_pass="root123"
